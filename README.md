@@ -42,25 +42,6 @@ Professional GST-compliant invoice generator built with React. Create, preview, 
 └── README.md
 ```
 
-## Deployment (Vercel)
-
-1. Push to GitHub maintaining the folder structure above
-2. Connect repo to Vercel
-3. Framework: **Create React App**
-4. Build command: `npm run build`
-5. Output directory: `build`
-
-No additional configuration needed — the default CRA settings work out of the box.
-
-## Local Development
-
-```bash
-npm install
-npm start
-```
-
-Opens on `http://localhost:3000`.
-
 ## GST Calculation Logic
 
 - **Intra-State** (Seller State = Place of Supply) → CGST + SGST, each at half the GST rate
