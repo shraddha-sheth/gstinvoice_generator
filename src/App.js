@@ -76,11 +76,11 @@ function Section({ title, icon, defaultOpen, children }) {
 
 // ─── Template Thumbnail (renders SVG with theme colors) ──────────
 function TemplateThumbnail({ template, theme, active, onClick }) {
-  // Replace ACCENT placeholder in SVG with actual theme color
-  const coloredSvg = template.svg.replace(/ACCENT/g, theme.primary);
+  // thumbnail is a function(theme) → SVG string
+  const svgHtml = template.thumbnail(theme);
   return (
     <button className={`template-card ${active ? "active" : ""}`} onClick={onClick} title={template.name}>
-      <div className="template-thumb" dangerouslySetInnerHTML={{ __html: coloredSvg }} />
+      <div className="template-thumb" dangerouslySetInnerHTML={{ __html: svgHtml }} />
       <div className="template-info">
         <strong>{template.name}</strong>
         <span>{template.desc}</span>
