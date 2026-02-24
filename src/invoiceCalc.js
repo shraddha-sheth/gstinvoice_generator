@@ -10,50 +10,40 @@
  * - "percent": discount value treated as percentage of subtotal
  * - "flat": discount value treated as absolute amount
  *
- * Exports:
- * - formatCurrency(n, currencyCode): Locale-aware formatter
- * - calcLineItem(item): Per-line taxable, discount, tax
- * - calcInvoiceTotals(inv): Full invoice with grouped tax breakdown
- * - numberToWords(n): Indian English words for amount
+ * NOTE: This file has NO imports from other project files to avoid circular
+ * dependencies. Currency data is passed as arguments instead.
  */
 
-import { CURRENCIES } from "./invoiceDefaults";
+/* ── Currency symbols lookup (inline to avoid circular imports) ── */
+const SYMBOLS = { INR:"₹", USD:"$", EUR:"€", GBP:"£", AED:"د.إ", SGD:"S$", AUD:"A$", CAD:"C$", JPY:"¥" };
 
 /**
  * Format a number with the selected currency symbol.
- * Falls back to ₹ if currency not found.
- *
  * @param {number} n - Amount
- * @param {string} currencyCode - e.g. "INR", "USD"
+ * @param {string} code - Currency code e.g. "INR", "USD"
  * @returns {string} Formatted string like "₹1,23,456.00"
  */
-export function formatCurrency(n, currencyCode = "INR") {
-  const cur = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
-  const locale = currencyCode === "INR" ? "en-IN" : "en-US";
-  return cur.symbol + Math.abs(n).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export function formatCurrency(n, code = "INR") {
+  const sym = SYMBOLS[code] || "₹";
+  const locale = code === "INR" ? "en-IN" : "en-US";
+  return sym + Math.abs(n).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-/** Backward-compatible alias used throughout the app */
-export const formatINR = (n, code) => formatCurrency(n, code);
+/** Backward-compatible alias */
+export const formatINR = formatCurrency;
 
 /**
  * Calculate a single line item's amounts.
  * Handles both percent-based and flat (absolute) discounts.
- *
- * @param {Object} item - { quantity, rate, discount, discountType, gstRate }
- * @returns {Object} { subtotal, discountAmt, taxableValue, gstAmt, total }
  */
 export function calcLineItem(item) {
   const subtotal = item.quantity * item.rate;
-
-  // Discount: "percent" applies % of subtotal; "flat" subtracts absolute value
   let discountAmt;
   if (item.discountType === "flat") {
-    discountAmt = Math.min(item.discount || 0, subtotal); // can't exceed subtotal
+    discountAmt = Math.min(item.discount || 0, subtotal);
   } else {
     discountAmt = subtotal * ((item.discount || 0) / 100);
   }
-
   const taxableValue = subtotal - discountAmt;
   const gstAmt = taxableValue * (item.gstRate / 100);
 
@@ -68,23 +58,18 @@ export function calcLineItem(item) {
 
 /**
  * Calculate complete invoice totals with tax breakdown.
- *
- * @param {Object} inv - Full invoice object
- * @returns {Object} Comprehensive totals including per-rate tax breakdown
  */
 export function calcInvoiceTotals(inv) {
   const isInterState = inv.sellerState !== inv.placeOfSupply;
   const cur = inv.currency || "INR";
 
-  // Step 1: Enrich each item with calculations
   const lineItems = inv.items.map(item => ({ ...item, calc: calcLineItem(item) }));
 
-  // Step 2: Aggregate
   const subtotal      = lineItems.reduce((s, i) => s + i.calc.subtotal, 0);
   const totalDiscount = lineItems.reduce((s, i) => s + i.calc.discountAmt, 0);
   const totalTaxable  = lineItems.reduce((s, i) => s + i.calc.taxableValue, 0);
 
-  // Step 3: Group tax by GST rate
+  // Group tax by rate
   const taxMap = {};
   lineItems.forEach(item => {
     const r = item.gstRate;
@@ -108,7 +93,6 @@ export function calcInvoiceTotals(inv) {
   const totalSGST = isInterState ? 0 : Math.round((totalTax / 2) * 100) / 100;
   const totalIGST = isInterState ? Math.round(totalTax * 100) / 100 : 0;
 
-  // Step 4: Grand total
   const shipping    = parseFloat(inv.shippingCharge) || 0;
   const grandTotal  = totalTaxable + totalTax + shipping;
   const roundedTotal = inv.roundOff ? Math.round(grandTotal) : Math.round(grandTotal * 100) / 100;
@@ -130,16 +114,11 @@ export function calcInvoiceTotals(inv) {
 }
 
 /**
- * Convert number to Indian English words.
- * Prefixes with currency name (e.g., "Rupees", "Dollars").
- *
- * @param {number} n - Amount
- * @param {string} cur - Currency code
- * @returns {string}
+ * Convert number to words with currency name prefix.
  */
 export function numberToWords(n, cur = "INR") {
-  const currencyNames = { INR: "Rupees", USD: "Dollars", EUR: "Euros", GBP: "Pounds", AED: "Dirhams", SGD: "Dollars", AUD: "Dollars", CAD: "Dollars", JPY: "Yen" };
-  const prefix = currencyNames[cur] || "Rupees";
+  const names = { INR:"Rupees", USD:"Dollars", EUR:"Euros", GBP:"Pounds", AED:"Dirhams", SGD:"Dollars", AUD:"Dollars", CAD:"Dollars", JPY:"Yen" };
+  const prefix = names[cur] || "Rupees";
   if (n === 0) return `${prefix} Zero Only`;
   n = Math.round(Math.abs(n));
 
@@ -155,6 +134,5 @@ export function numberToWords(n, cur = "INR") {
     if (num < 10000000) return c(Math.floor(num/100000)) + " Lakh" + (num%100000 ? " " + c(num%100000) : "");
     return c(Math.floor(num/10000000)) + " Crore" + (num%10000000 ? " " + c(num%10000000) : "");
   }
-
   return `${prefix} ${c(n)} Only`;
 }
