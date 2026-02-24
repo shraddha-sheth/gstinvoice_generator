@@ -1,0 +1,24 @@
+{
+  "name": "gst-invoice-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Professional GST Invoice Generator with PDF/DOCX/Excel export, templates, and mobile support",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
+    "docx": "^8.5.0",
+    "file-saver": "^2.0.5",
+    "xlsx": "^0.18.5"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build"
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version"]
+  }
+}
